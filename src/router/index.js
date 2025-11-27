@@ -1,27 +1,120 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
+import Login from '../views/login'
+import Layout from '../views/layout'
+import MyOrder from '../views/myorder'
+import Search from '../views/search'
+import SearchList from '../views/search/list.vue'
+import Pay from '../views/pay'
+import address from '../views/pay/address.vue'
+import Prodetail from '../views/prodetail'
+import Home from '../views/layout/home'
+import Cart from '../views/layout/cart'
+import User from '../views/layout/user'
+import Category from '../views/layout/category'
+import store from '../store/index'
 
+
+// const Login = () => import('../views/login')
+// const Layout = () => import('../views/layout')
+// const MyOrder = () => import('../views/myorder')
+// const Search = () => import('../views/search')
+// const SearchList = () => import('../views/search/list.vue')
+// const Pay = () => import('../views/pay')
+// const Prodetail = () => import('../views/prodetail')
+// const Home = () => import('../views/layout/home')
+// const Cart = () => import('../views/layout/cart')
+// const User = () => import('../views/layout/user')
+// const Category = () => import('../views/layout/category')
+// const store = () => import('../store/index')
 Vue.use(VueRouter)
 
-const routes = [
-  {
-    path: '/',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
-  }
-]
 
 const router = new VueRouter({
-  routes
+  routes: [
+    {
+      path: '/login',
+      component: Login
+    },
+    {
+      path: '/',
+      component: Layout,
+      children:
+        [
+          {
+            path: 'home',
+            component: Home
+          },
+          {
+            path: 'category',
+            component: Category
+          },
+          {
+            path: 'cart',
+            component: Cart
+          },
+          {
+            path: 'user',
+            component: User
+          },
+        ]
+    },
+    {
+      path: '/myorder',
+      component: MyOrder
+    },
+    {
+      path: '/search',
+      component: Search
+    },
+    {
+      path: '/searchList',
+      component: SearchList
+    },
+    {
+      path: '/pay',
+      component: Pay
+    },
+    {
+      path: '/address',
+      component: address
+    },
+    {
+      //动态路由传参，确定将来是哪个商品，路由参数中携带id
+      path: '/prodetail/:id',
+      component: Prodetail
+    }
+  ]
 })
 
+//所有的路由在真正被访问到之前(解析渲染对应的组件页面之前)，都会先经过全局前置守卫
+//只有全局前置守卫放行了，才会到达对应的页面
+
+// 全局前置导航守卫
+// to: 到哪里去，到哪去的完整路由信息对象(路径，参数)
+// from: 从哪里来，从哪来的完整路由信息对象(路径，参数)
+// next():是否放行
+//(1) next() 直接放行，放行到to要去的路径
+//(2)  next(路径)  进行拦截，拦截到next里面配置的路径
+
+//定义一个数组，专门用户存放所有需要权限访问的页面
+const authUrls = ['/pay', 'myorder']
+
+router.beforeEach((to, from, next) => {
+  // console.log(to, from, next);
+  //看to.path是否存在authUrls中出现过
+  if (!authUrls.includes(to.path)) {
+    //非权限页面，直接放行
+    next()
+    return
+  }
+  //是权限页面，需要判断token
+  const token = store.getters.token
+  if (token) {
+    next()
+  }
+  else {
+    next('/login')
+  }
+})
 export default router
